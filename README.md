@@ -6,7 +6,9 @@ This project uses data that is made available by the [Aurorawatch UK](https://au
 The data from Aurorawatch UK is made available under CC BY-NC-SA 3.0 Attribution-NonCommercial-ShareAlike 3.0 Unported. Accordingly, this project is licensed under CC BY-NC-SA 4.0 Attribution-NonCommercial-ShareAlike 4.0 International. See [LICENSE](./LICENSE) for further details.
 
 # aurorawatch-uk
-Retrieves status information from Aurorawatch UK and sends an alert using [Pushover](https://pushover.net/) if all sites are reporting [red](https://aurorawatch.lancs.ac.uk/alerts/).
+Retrieves status information from Aurorawatch UK and sends an alert using Pushover if all sites provided in the primary API output are reporting red.
+
+Aurorawatch UK already have a range of smartphone apps and other methods of [receiving alerts]((https://aurorawatch.lancs.ac.uk/alerts/)) that are probably sufficient for most people's needs, and offer greater flexibility than this project. The author wanted only notifications of all sites reporting red, specifically via Pushover.
 
 This project is intended to be run as a background systemd service in a Linux environment. The pre-requisites and installation instructions are provided on that basis.
 
@@ -54,3 +56,58 @@ These instructions are written primarily with Debian in mind, but they will prob
 1. Fill in the name, description etc., agree to terms and click Create Application.
 1. Copy the API token into a note-taking app.
 1. Go back to your Pushover [account page](https://pushover.net/).
+1. Copy your user key into a note-taking app. (You could also create a delivery group, add multiple user keys to the group, and copy the group key if you wanted to send alerts to multiple users simultaneously.)
+1. Create an environment file:
+
+    `sudo nano /etc/opt/aurorawatch-uk-alerts/aurorawatch-uk-alerts.env`
+
+    containing
+
+    ```
+    PUSHOVER_USER_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    PUSHOVER_APP_TOKEN=yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+    ```
+
+    replacing the xs and ys with the keys you copied out of your Pushover account. Ctrl-s to save, Ctrl-x to exit.
+1. Change the ownership of the directory and file:
+
+    `sudo chown -R aurora: /etc/opt/aurorawatch-uk-alerts`.
+1. Lock down the permissions of the directory and file:
+
+    `sudo chmod -R 700 /etc/opt/aurorawatch-uk-alerts`.
+1. Create a new systemd unit file:
+
+    `sudo nano /etc/systemd/system/aurorawatch-uk-alerts.service`
+
+    containing
+
+    ```
+    [Unit]
+    Description=Aurorawatch UK Alerts
+    After=network-online.target
+    Wants=network-online.target
+
+    [Service]
+    User=aurora
+    Group=aurora
+    Type=exec
+    ExitType=main
+    KillMode=control-group
+    Restart=no
+    EnvironmentFile=/etc/opt/aurorawatch-uk-alerts/aurorawatch-uk-alerts.env
+    ExecStart=/usr/bin/python3 /opt/aurorawatch-uk-alerts/app/aurorawatch-uk-alerts.py
+
+    [Install]
+    WantedBy=multi-user.target
+    ```
+
+    Ctrl-s to save, Ctrl-x to exit.
+1. Reload systemd unit files:
+
+    `sudo systemctl daemon-reload`.
+1. Enable the service:
+
+    `sudo systemctl enable aurorawatch-uk-alerts.service`.
+1. Start the service:
+
+    `sudo systemctl start aurorawatch-uk-alerts.service`.
