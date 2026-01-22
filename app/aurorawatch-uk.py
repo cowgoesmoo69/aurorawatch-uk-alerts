@@ -12,7 +12,7 @@ import time
 
 DEBUG = False  # Set to True to enable noisier output in terminal.
 
-PUSHOVER_USER_KEY = os.environ.get("PUSHOVER_GROUP_KEY")  # Pushover group key.
+PUSHOVER_USER_KEY = os.environ.get("PUSHOVER_USER_KEY")  # Pushover group key.
 PUSHOVER_APP_TOKEN = os.environ.get("PUSHOVER_APP_TOKEN")  # Pushover app token.
 PUSHOVER_URL = "https://api.pushover.net/1/messages.json"
 AWUK_URL = "https://aurorawatch-api.lancs.ac.uk/0.2.5/status/all-site-status.xml"
