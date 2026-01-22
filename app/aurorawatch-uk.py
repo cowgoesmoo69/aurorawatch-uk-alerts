@@ -12,7 +12,7 @@ import time
 
 DEBUG = False  # Set to True to enable noisier output in terminal.
 
-PUSHOVER_GROUP_KEY = os.environ.get("PUSHOVER_GROUP_KEY")  # Pushover group key.
+PUSHOVER_USER_KEY = os.environ.get("PUSHOVER_GROUP_KEY")  # Pushover group key.
 PUSHOVER_APP_TOKEN = os.environ.get("PUSHOVER_APP_TOKEN")  # Pushover app token.
 PUSHOVER_URL = "https://api.pushover.net/1/messages.json"
 AWUK_URL = "https://aurorawatch-api.lancs.ac.uk/0.2.5/status/all-site-status.xml"
@@ -22,7 +22,7 @@ def check_env():
     if DEBUG:
         print("DEBUG: Checking for environment variables.")
     # Check environment variables exist.
-    if not PUSHOVER_GROUP_KEY or not PUSHOVER_APP_TOKEN:
+    if not PUSHOVER_USER_KEY or not PUSHOVER_APP_TOKEN:
         raise RuntimeError("Missing environment variable(s).")
     if DEBUG:
         print("DEBUG: Environment variables found.")
@@ -39,7 +39,7 @@ def send_pushover_alert(
     # ttl defaults to 14400 seconds (four hours) so messages expire and disappear.
     payload = {
         "token": PUSHOVER_APP_TOKEN,
-        "user": PUSHOVER_GROUP_KEY,
+        "user": PUSHOVER_USER_KEY,
         "message": message,
         "priority": priority,
         "ttl": ttl,
