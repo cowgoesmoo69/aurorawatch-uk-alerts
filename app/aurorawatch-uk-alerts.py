@@ -3,6 +3,7 @@
 # This script expects PUSHOVER_USER_KEY and PUSHOVER_APP_TOKEN to be present as
 # environment variables. See installation instructions for further information.
 #
+import argparse
 from pushover import send_alert
 from datetime import date, datetime, timedelta
 from lxml import etree
@@ -11,14 +12,50 @@ import random
 import requests
 import time
 
+
 DEBUG = False  # Set to True to enable noisier output in terminal.
 
+SCRIPT_VERSION="2.0.0"
 PUSHOVER_USER_KEY = os.environ.get("PUSHOVER_USER_KEY")  # Pushover user/group key.
 PUSHOVER_APP_TOKEN = os.environ.get("PUSHOVER_APP_TOKEN")  # Pushover app token.
 AWUK_URL = "https://aurorawatch-api.lancs.ac.uk/0.2.5/status/all-site-status.xml"
 
 
-def check_env():
+def argparser():
+    parser = argparse.ArgumentParser(
+        description="Fetch Aurorawatch UK status and send a Pushover alert if status is above threshold. This script requires a Pushover app token and a Pushover user/group key to be available as environment variables PUSHOVER_APP_TOKEN and PUSHOVER_USER_KEY. Consult your operating system's documentation for information on how to set environment variables."
+    )
+    parser.add_argument(
+        "threshold", help="Sets the alert threshold, 1=yellow, 2=amber, 3=red"
+    )
+    parser.add_argument(
+        "-d",
+        "--debug",
+        help="Turns on DEBUG output",
+        action="store_true",
+    )
+    parser.add_argument("-v", "--version", action="version", version=SCRIPT_VERSION)
+    return parser.parse_args()
+
+
+def pre_checks():
+    args = argparser()
+    global DEBUG
+    DEBUG = args.debug
+    # Validate supplied threshold value.
+    if DEBUG:
+        print("Validating supplied threshold value.")
+    global THRESHOLD
+    THRESHOLD = args.threshold
+    if isinstance(THRESHOLD, int):
+        if THRESHOLD >=1 and THRESHOLD <=3:
+            pass
+        else:
+            raise ValueError("Threshold must be between 1 and 3.")
+    else:
+        raise TypeError("Threshold must be an integer.")
+    if DEBUG:
+        print("Threshold passed validation.")
     if DEBUG:
         print("DEBUG: Checking for environment variables.")
     # Check environment variables exist.
@@ -118,12 +155,17 @@ def main():
         status = get_current_status(status_ids)
         # Send alert only if all sites reporting red.
         if status == "red":
-            pass
-            # Send high priority alert.
-            #send_pushover_alert("All sites reporting RED status.", 1)
+            args = {
+                "token": PUSHOVER_APP_TOKEN,
+                "user": PUSHOVER_USER_KEY,
+                "message": "All sites reporting red status.",
+                "priority": 1,
+                "ttl": (3600 * 4)
+                }
+            send_alert(**args)
         go_to_sleep()
 
 
 if __name__ == "__main__":
-    check_env()
+    pre_checks()
     main()
