@@ -82,23 +82,6 @@ def pre_checks():
         print("DEBUG: Environment variables found.")
 
 
-def go_to_sleep():
-    # Calculate time of next check. Top of next hour, plus a random number of minutes
-    # and seconds so that check is performed in first five minutes of hour.
-    t = datetime.now()
-    n = t.replace(minute=0, second=0, microsecond=0) + timedelta(
-        hours=1, minutes=random.randint(0, 4), seconds=random.randint(0, 59)
-    )
-    if DEBUG:
-        print(f"DEBUG: Next check at {n.strftime('%Y-%m-%d %H:%M:%S')}")
-    # Calculate how long to sleep for.
-    s = (n - t).total_seconds()
-    # Sleep.
-    if DEBUG:
-        print(f"DEBUG: Sleeping for {s} seconds.")
-    time.sleep(s)
-
-
 def main():
     while True:
         status = get_status()
@@ -113,7 +96,7 @@ def main():
             if status == 3:
                 args["priority"] = 1
             send_alert(**args)
-        go_to_sleep()
+        time.sleep(540) # AWUK request no shorter than 3-minute interval.
 
 
 if __name__ == "__main__":
