@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 #
-# This script expects PUSHOVER_GROUP_KEY and PUSHOVER_APP_TOKEN to be present as
+# This script expects PUSHOVER_USER_KEY and PUSHOVER_APP_TOKEN to be present as
 # environment variables. See installation instructions for further information.
 #
+from pushover import send_alert
 from datetime import date, datetime, timedelta
 from lxml import etree
 import os
@@ -12,9 +13,8 @@ import time
 
 DEBUG = False  # Set to True to enable noisier output in terminal.
 
-PUSHOVER_USER_KEY = os.environ.get("PUSHOVER_USER_KEY")  # Pushover group key.
+PUSHOVER_USER_KEY = os.environ.get("PUSHOVER_USER_KEY")  # Pushover user/group key.
 PUSHOVER_APP_TOKEN = os.environ.get("PUSHOVER_APP_TOKEN")  # Pushover app token.
-PUSHOVER_URL = "https://api.pushover.net/1/messages.json"
 AWUK_URL = "https://aurorawatch-api.lancs.ac.uk/0.2.5/status/all-site-status.xml"
 
 
@@ -26,37 +26,6 @@ def check_env():
         raise RuntimeError("Missing environment variable(s).")
     if DEBUG:
         print("DEBUG: Environment variables found.")
-
-
-def send_pushover_alert(
-    message,
-    priority=0,
-    ttl=14400,
-):
-    # Sends a notification using Pushover.
-    #
-    # priority defaults to 0, normal priority.
-    # ttl defaults to 14400 seconds (four hours) so messages expire and disappear.
-    payload = {
-        "token": PUSHOVER_APP_TOKEN,
-        "user": PUSHOVER_USER_KEY,
-        "message": message,
-        "priority": priority,
-        "ttl": ttl,
-        "url": "",
-        "url_title": "https://aurorawatch.lancs.ac.uk/",
-    }
-    try:
-        if DEBUG:
-            print("Sending Pushover message.")
-        response = requests.post(PUSHOVER_URL, data=payload, timeout=10)
-        if DEBUG:
-            print("DEBUG: Checking if Pushover send successful.")
-        response.raise_for_status()
-        if DEBUG:
-            print("DEBUG: Pushover send successful.")
-    except Exception as e:
-        print(f"An exception occurred while sending Pushover message: {e}")
 
 
 def get_status_ids():
@@ -149,8 +118,9 @@ def main():
         status = get_current_status(status_ids)
         # Send alert only if all sites reporting red.
         if status == "red":
+            pass
             # Send high priority alert.
-            send_pushover_alert("All sites reporting RED status.", 1)
+            #send_pushover_alert("All sites reporting RED status.", 1)
         go_to_sleep()
 
 
