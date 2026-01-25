@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-from nt import read
 import requests
 from lxml import etree
 
