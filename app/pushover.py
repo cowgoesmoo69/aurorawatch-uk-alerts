@@ -7,16 +7,19 @@ import requests
 import time
 from typing import BinaryIO
 
+SCRIPT_VERSION = "pushover 1.0.0"
+
 PUSHOVER_URL = "https://api.pushover.net/1/messages.json"
+
 
 @dataclass
 class Validate:
     # https://pushover.net/api
     #
     # required
-    token: str # Application token/key from Pushover.
-    user: str       # User/group key of Pushover recipient.
-    message: str   # Message to be sent.
+    token: str  # Application token/key from Pushover.
+    user: str  # User/group key of Pushover recipient.
+    message: str  # Message to be sent.
 
     # optional
     # Haven't included attachment_base64 or attachment_type.
@@ -27,7 +30,7 @@ class Validate:
     html: int | None = None
     monospace: int | None = None
     priority: int | None = None
-    sound: str | None = None # Only built-in Pushover sounds currently supported.
+    sound: str | None = None  # Only built-in Pushover sounds currently supported.
     timestamp: int | None = None
     title: str | None = None
     ttl: int | None = None
@@ -42,20 +45,24 @@ class Validate:
                 if re.fullmatch(r"[a-z0-9]{30}", a):
                     pass
                 else:
-                    raise ValueError(f"Required parameter '{field}' must be 30 characters, only a-z and 0-9.")
+                    raise ValueError(
+                        f"Required parameter '{field}' must be 30 characters, only a-z and 0-9."
+                    )
             else:
                 raise TypeError(f"Required parameter '{field}' must be a string.")
-        
+
         # Validate message parameter.
         b = getattr(self, "message")
         if isinstance(b, str):
             if len(b) > 0 and len(b) <= 1024:
                 pass
             else:
-                raise ValueError("Required parameter 'message' must be between 1 and 1024 characters.")
+                raise ValueError(
+                    "Required parameter 'message' must be between 1 and 1024 characters."
+                )
         else:
             raise TypeError("Required parameter 'message' must be a string.")
-        
+
         # Validate attachment.
         c = getattr(self, "attachment")
         if not c == None:
@@ -66,7 +73,9 @@ class Validate:
                 if len(fname) > 1 and len(fname) < 32:
                     pass
                 else:
-                    raise ValueError("Filename item in 'attachment' must be between 1 and 64 characters")
+                    raise ValueError(
+                        "Filename item in 'attachment' must be between 1 and 64 characters"
+                    )
             else:
                 raise TypeError("Filename item in 'attachment' must be a string.")
             # Check file.
@@ -85,7 +94,9 @@ class Validate:
                     else:
                         raise ValueError("File item in 'attachment' exceeds 5MB limit.")
                 else:
-                    raise ValueError("File item in 'attachment' must be a seekable file object.")
+                    raise ValueError(
+                        "File item in 'attachment' must be a seekable file object."
+                    )
             else:
                 raise TypeError("File item in 'attachment' must be a file-like object.")
             if isinstance(ftype, str):
@@ -94,7 +105,9 @@ class Validate:
                 if ftype in allowed_types:
                     pass
                 else:
-                        raise ValueError(f"Filetype item in 'attachment' must be one of: {', '.join(allowed_types)}.")
+                    raise ValueError(
+                        f"Filetype item in 'attachment' must be one of: {', '.join(allowed_types)}."
+                    )
             else:
                 raise TypeError("Filetype item in 'attachment' must be a string.")
 
@@ -105,7 +118,9 @@ class Validate:
                 if re.fullmatch(r"^[a-zA-Z0-9_-]{1,25}$", d):
                     pass
                 else:
-                    raise ValueError("Optional parameter 'device' must be 1 to 25 characters, only letters, numbers, underscores and hyphens.")
+                    raise ValueError(
+                        "Optional parameter 'device' must be 1 to 25 characters, only letters, numbers, underscores and hyphens."
+                    )
             else:
                 raise TypeError("Optional parameter 'device' must be a string.")
 
@@ -122,15 +137,21 @@ class Validate:
                     if e >= 0 and e <= 1:
                         pass
                     else:
-                        raise ValueError(f"Optional parameter '{field}' must be 0 or 1.")
+                        raise ValueError(
+                            f"Optional parameter '{field}' must be 0 or 1."
+                        )
                 if field == "priority":
                     if e >= -2 and e <= 2:
                         pass
                     else:
-                        raise ValueError("Optional parameter 'priority' must be between -2 and 2.")
+                        raise ValueError(
+                            "Optional parameter 'priority' must be between -2 and 2."
+                        )
         # Check html and monospace not both 1.
         if getattr(self, "html") == 1 and getattr(self, "monospace") == 1:
-            raise ValueError("Optional parameters 'html' and 'monospace' cannot both be 1.")
+            raise ValueError(
+                "Optional parameters 'html' and 'monospace' cannot both be 1."
+            )
 
         # Validate sound parameter.
         f = getattr(self, "sound")
@@ -160,13 +181,13 @@ class Validate:
                     "updown",
                     "vibrate",
                     "none",
-                    ]
+                ]
                 if f in valid_sounds:
                     pass
                 else:
                     lines = [
                         "Optional parameter 'sound' is not a valid Pushover sound.",
-                        f"Valid sounds are: {', '.join(valid_sounds)}."
+                        f"Valid sounds are: {', '.join(valid_sounds)}.",
                     ]
                     emsg = "\n".join(lines)
                     raise ValueError(emsg)
@@ -181,11 +202,15 @@ class Validate:
                     if g < (int(time.time()) + 157680000):
                         pass
                     else:
-                        raise ValueError("Optional parameter 'timestamp' cannot be greater than five years in the future.")
+                        raise ValueError(
+                            "Optional parameter 'timestamp' cannot be greater than five years in the future."
+                        )
                 else:
-                    raise ValueError("Optional parameter 'timestamp' must be greater than 0.")
+                    raise ValueError(
+                        "Optional parameter 'timestamp' must be greater than 0."
+                    )
             else:
-                    raise TypeError("Optional parameter 'timestamp' must be an integer.")
+                raise TypeError("Optional parameter 'timestamp' must be an integer.")
 
         # Validate title parameter.
         h = getattr(self, "title")
@@ -194,7 +219,9 @@ class Validate:
                 if len(h) > 0 and len(h) <= 250:
                     pass
                 else:
-                    raise ValueError("Optional parameter 'title' must be between 1 and 250 characters.")
+                    raise ValueError(
+                        "Optional parameter 'title' must be between 1 and 250 characters."
+                    )
             else:
                 raise TypeError("Optional parameter 'title' must be a string.")
 
@@ -205,7 +232,9 @@ class Validate:
                 if i > 0 and i <= 31536000:
                     pass
                 else:
-                    raise ValueError("Optional parameter 'ttl' must be between 1 and 31536000.")
+                    raise ValueError(
+                        "Optional parameter 'ttl' must be between 1 and 31536000."
+                    )
             else:
                 raise TypeError("Optional parameter 'ttl' must be an integer.")
 
@@ -216,14 +245,18 @@ class Validate:
                 if len(j) > 8 and len(j) <= 512:
                     pass
                 else:
-                    raise ValueError("Optional parameter 'url' must be between 8 and 512 characters.")
+                    raise ValueError(
+                        "Optional parameter 'url' must be between 8 and 512 characters."
+                    )
             else:
                 raise TypeError("Optional parameter 'url' must be a string.")
             # Check url at least starts https://, after that up to the user to validate.
             if re.fullmatch(r"^https://.*", j):
                 pass
             else:
-                raise ValueError("Optional parameter 'url' does not appear to be a valid url, must start with https://.")
+                raise ValueError(
+                    "Optional parameter 'url' does not appear to be a valid url, must start with https://."
+                )
 
         # Validate url_title parameter.
         k = getattr(self, "url_title")
@@ -232,14 +265,18 @@ class Validate:
                 if len(k) > 0 and len(k) <= 512:
                     pass
                 else:
-                    raise ValueError("Optional parameter 'url_title' must be between 1 and 512 characters.")
+                    raise ValueError(
+                        "Optional parameter 'url_title' must be between 1 and 512 characters."
+                    )
             else:
                 raise TypeError("Optional parameter 'url_title' must be a string.")
             # Check there's a url to go with the title.
             if j == None:
-                raise ValueError("Optional parameter 'url_title' was passed without a corresponding 'url' parameter.")
+                raise ValueError(
+                    "Optional parameter 'url_title' was passed without a corresponding 'url' parameter."
+                )
         # End validation checks.
-        
+
 
 def send_alert(**kwargs):
     """Function to send an alert using Pushover.
@@ -262,10 +299,10 @@ def send_alert(**kwargs):
     - url specifies a url to be added to the message as a hyperlink.
     - url_title specifies custom text for the url hyperlink.
     """
-    
+
     # Use dataclass to validate the kwargs.
     payload_obj = Validate(**kwargs)
-    
+
     # Create the message payload, exclude None items and any attachment.
     msg_payload = {}
     for field in fields(payload_obj):
@@ -277,7 +314,7 @@ def send_alert(**kwargs):
     args = {
         "url": PUSHOVER_URL,
         "data": msg_payload,
-        }
+    }
 
     # If there is an attachment, add it to args.
     attachment = getattr(payload_obj, "attachment")
@@ -288,14 +325,16 @@ def send_alert(**kwargs):
     response = requests.post(**args)
     response.raise_for_status()
     return response
-    
+
 
 def main():
     # testing only
     # image = ("image.jpg", open("valid/path/to/image.jpg", "rb"), "image/jpeg")
     # send_alert(token="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", user="yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy", message="testing", attachment=image)
     print("This script is not intended to be run as-is.")
-    print("Put this file in the same directory as your script and import: from pushover import send_alert")
+    print(
+        "Put this file in the same directory as your script and import: from pushover import send_alert"
+    )
 
 
 if __name__ == "__main__":
