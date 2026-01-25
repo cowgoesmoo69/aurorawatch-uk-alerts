@@ -8,11 +8,7 @@ from aurorawatchuk import get_status
 from datetime import date, datetime, timedelta
 from pushover import send_alert
 
-SCRIPT_VERSION="2.0.0"
-# TODO
-# Integrate alert interval and check interval into ArgumentParser
-ALERT_INTERVAL = 3600 # 1 hour
-CHECK_INTERVAL = 300  # 5 minutes
+SCRIPT_VERSION="aurorawatch-uk-alerts 2.0.0"
 
 def argparser():
     parser = argparse.ArgumentParser(
@@ -22,11 +18,29 @@ def argparser():
         "threshold", help="Sets the alert threshold, 1=yellow, 2=amber, 3=red"
     )
     parser.add_argument(
+        "-a",
+        "--alert-interval",
+        help="Sets a custom alert interval in seconds. Default is one hour.",
+        default=3600,
+        )
+    parser.add_argument(
+        "-c",
+        "--check-interval",
+        help="Sets a custom check interval in seconds. Default is five minutes.",
+        default=300,
+        )
+    parser.add_argument(
         "-d",
         "--debug",
         help="Turns on DEBUG output",
         action="store_true",
     )
+    parser.add_argument(
+        "-r",
+        "--reduced-sensitivity",
+        help="Only send alerts when status of all sites is above threshold.",
+        action="store_true",
+        )
     parser.add_argument(
         "-t",
         "--ttl",
@@ -45,6 +59,8 @@ def pre_checks():
     args = argparser()
     global DEBUG
     DEBUG = args.debug
+    global REDUCED_SENSITIVITY
+    REDUCED_SENSITIVITY = args.reduced_sensitivity
     # Validate threshold value.
     if DEBUG:
         print("Validating supplied threshold value.")
@@ -57,11 +73,36 @@ def pre_checks():
             raise ValueError("Threshold must be between 1 and 3.")
     else:
         raise TypeError("Threshold must be an integer.")
+    # Validate alert interval
+    global ALERT_INTERVAL
+    ALERT_INTERVAL = int(args.alert_interval)
     if DEBUG:
-        print("Threshold passed validation.")
+        print("Validating alert interval.")
+    if isinstance(ALERT_INTERVAL, int):
+        if ALERT_INTERVAL > 0:
+            pass
+        else:
+            raise ValueError("Alert interval cannot be negative.")
+    else:
+        raise TypeError("Alert interval must be an integer.")
+    # Validate check interval
+    global CHECK_INTERVAL
+    CHECK_INTERVAL = int(args.check_interval)
+    if DEBUG:
+        print("Validating check interval.")
+    if isinstance(CHECK_INTERVAL, int):
+        if CHECK_INTERVAL > 0:
+            if CHECK_INTERVAL >= 180:
+                pass
+            else:
+                raise ValueError("Check interval cannot be less than three minutes.")
+        else:
+            raise ValueError("Check interval cannot be negative.")
+    else:
+        raise TypeError("Check interval must be an integer.")
     # Validate ttl value.
     global TTL
-    TTL = args.ttl
+    TTL = int(args.ttl)
     if DEBUG:
         print("Validating TTL.")
     if isinstance(TTL, int):
@@ -71,8 +112,6 @@ def pre_checks():
             raise ValueError("TTL must be betwen 1 and 31536000.")
     else:
         raise TypeError("TTL must be an integer.")
-    if DEBUG:
-        print("TTL passed validation.")
     # Check for necessary environment variables.
     if DEBUG:
         print("DEBUG: Checking for environment variables.")
@@ -82,46 +121,48 @@ def pre_checks():
     PUSHOVER_USER_KEY = os.environ.get("PUSHOVER_USER_KEY")
     if not PUSHOVER_USER_KEY or not PUSHOVER_APP_TOKEN:
         raise RuntimeError("Missing environment variable(s).")
-    if DEBUG:
-        print("DEBUG: Environment variables found.")
 
 
 def main():
     STATUS_TEXT = ["GREEN", "YELLOW", "AMBER", "RED"]
     last_alert_time = 0
     while True:
-        status = get_status()
-        now = time.time()
-        if DEBUG:
-            print(f"Current status: {STATUS_TEXT[status]}.")
-        if status >= THRESHOLD:
-            should_alert = (
-                last_alert_time = 0 or
-                (now - last_alert_time >= ALERT_INTERVAL)
-                )
-            if should_alert:
-                if DEBUG:
-                    print("Sending alert.")
-                args = {
-                    "token": PUSHOVER_APP_TOKEN,
-                    "user": PUSHOVER_USER_KEY,
-                    "message": f"AuroraWatch UK Status: {STATUS_TEXT[status]}.",
-                    "ttl": TTL
-                    }
-                # Send RED alerts as high priority.
-                if status == 3:
-                    args["priority"] = 1
-                send_alert(**args)
-                last_alert_time = now
-            else:
-                if DEBUG:
-                    print("Status above threshold, but alert recently sent.")
+        status = get_status(REDUCED_SENSITIVITY)
+        if status == None:
+            if DEBUG:
+                print("An error occurred fetching status, skipping.")
         else:
-            # Reset if status drops below threshold.
-            last_alert_time = 0
-        if DEBUG:
-            print("Sleeping...")
-        time.sleep(CHECK_INTERVAL) # AWUK request no shorter than 3-minute interval.
+            now = time.time()
+            if DEBUG:
+                print(f"Current status: {STATUS_TEXT[status]}.")
+            if status >= THRESHOLD:
+                should_alert = (
+                    last_alert_time == 0 or
+                    (now - last_alert_time >= ALERT_INTERVAL)
+                    )
+                if should_alert:
+                    if DEBUG:
+                        print("Sending alert.")
+                    args = {
+                        "token": PUSHOVER_APP_TOKEN,
+                        "user": PUSHOVER_USER_KEY,
+                        "message": f"AuroraWatch UK Status: {STATUS_TEXT[status]}.",
+                        "ttl": TTL
+                        }
+                    # Send RED alerts as high priority.
+                    if status == 3:
+                        args["priority"] = 1
+                    send_alert(**args)
+                    last_alert_time = now
+                else:
+                    if DEBUG:
+                        print("Status above threshold, but alert recently sent.")
+            else:
+                # Reset if status drops below threshold.
+                last_alert_time = 0
+            if DEBUG:
+                print("Sleeping...")
+            time.sleep(CHECK_INTERVAL) # AWUK request no shorter than 3-minute interval.
 
 
 if __name__ == "__main__":
