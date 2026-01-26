@@ -71,8 +71,7 @@ def process_status_ids(
     for i, rank in enumerate(RANK_ORDER):
         if rank in statuses:
             return i
-        else:
-            return None
+    return None
 
 
 def get_status(reduced_sensitivity=False):
