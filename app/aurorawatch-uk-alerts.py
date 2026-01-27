@@ -4,11 +4,21 @@ import argparse
 import os
 import random
 import time
+from typing_extensions import runtime
 from aurorawatchuk import get_status
 from datetime import date, datetime, timedelta
 from pushover import send_alert
 
 SCRIPT_VERSION = "aurorawatch-uk-alerts 2.0.0"
+
+DEBUG = False
+REDUCED_SENSITIVITY = False
+THRESHOLD = None
+ALERT_INTERVAL = 0
+CHECK_INTERVAL = 0
+TTL = 0
+PUSHOVER_APP_TOKEN = None
+PUSHOVER_USER_KEY = None
 
 
 def argparser():
@@ -54,74 +64,66 @@ def argparser():
 
 def pre_checks():
     """
-    Processes supplied command-line arguments and checks that required environment variables exist.
+    Checks that required environment variables exist and processes command line arguments.
     Format validation of the app token and the user key is performed within the pushover.py module.
     """
+    # Check for necessary environment variables.
+    if DEBUG:
+        print("DEBUG: Checking for environment variables.")
+    PUSHOVER_APP_TOKEN = os.environ.get("PUSHOVER_APP_TOKEN")
+    if not PUSHOVER_APP_TOKEN:
+        raise RuntimeError("Environment variable PUSHOVER_APP_TOKEN missing.")
+    PUSHOVER_USER_KEY = os.environ.get("PUSHOVER_USER_KEY")
+    if not PUSHOVER_USER_KEY:
+        raise RuntimeError("Environment variable PUSHOVER_USER_KEY missing.")
+    # Parse command line arguments.
     args = argparser()
-    global DEBUG
     DEBUG = args.debug
-    global REDUCED_SENSITIVITY
     REDUCED_SENSITIVITY = args.reduced_sensitivity
     # Validate threshold value.
     if DEBUG:
         print("Validating supplied threshold value.")
-    global THRESHOLD
-    THRESHOLD = int(args.threshold)
-    if isinstance(THRESHOLD, int):
-        if THRESHOLD >= 1 and THRESHOLD <= 3:
-            pass
-        else:
-            raise ValueError("Threshold must be between 1 and 3.")
-    else:
+    try:
+        THRESHOLD = int(args.threshold)
+    except ValueError:
         raise TypeError("Threshold must be an integer.")
+    if THRESHOLD >= 1 and THRESHOLD <= 3:
+        pass
+    else:
+        raise ValueError("Threshold must be between 1 and 3.")
     # Validate alert interval
-    global ALERT_INTERVAL
-    ALERT_INTERVAL = int(args.alert_interval)
+    try:
+        ALERT_INTERVAL = int(args.alert_interval)
+    except ValueError:
+        raise TypeError("Alert interval must be an integer.")
     if DEBUG:
         print("Validating alert interval.")
-    if isinstance(ALERT_INTERVAL, int):
-        if ALERT_INTERVAL > 0:
-            pass
-        else:
-            raise ValueError("Alert interval cannot be negative.")
+    if ALERT_INTERVAL > 0:
+        pass
     else:
-        raise TypeError("Alert interval must be an integer.")
+        raise ValueError("Alert interval must be > 0.")
     # Validate check interval
-    global CHECK_INTERVAL
-    CHECK_INTERVAL = int(args.check_interval)
+    try:
+        CHECK_INTERVAL = int(args.check_interval)
+    except ValueError:
+        raise TypeError("Check interval must be an integer.")
     if DEBUG:
         print("Validating check interval.")
-    if isinstance(CHECK_INTERVAL, int):
-        if CHECK_INTERVAL > 0:
-            if CHECK_INTERVAL >= 180:
-                pass
-            else:
-                raise ValueError("Check interval cannot be less than three minutes.")
-        else:
-            raise ValueError("Check interval cannot be negative.")
+    if CHECK_INTERVAL >= 180:
+        pass
     else:
-        raise TypeError("Check interval must be an integer.")
+        raise ValueError("Check interval must be >= 180.")
     # Validate ttl value.
-    global TTL
-    TTL = int(args.ttl)
+    try:
+        TTL = int(args.ttl)
+    except ValueError:
+        raise TypeError("TTL must be an integer.")
     if DEBUG:
         print("Validating TTL.")
-    if isinstance(TTL, int):
-        if TTL > 0 and TTL <= 31536000:
-            pass
-        else:
-            raise ValueError("TTL must be betwen 1 and 31536000.")
+    if TTL >= 1 and TTL <= 31536000:
+        pass
     else:
-        raise TypeError("TTL must be an integer.")
-    # Check for necessary environment variables.
-    if DEBUG:
-        print("DEBUG: Checking for environment variables.")
-    global PUSHOVER_APP_TOKEN
-    PUSHOVER_APP_TOKEN = os.environ.get("PUSHOVER_APP_TOKEN")
-    global PUSHOVER_USER_KEY
-    PUSHOVER_USER_KEY = os.environ.get("PUSHOVER_USER_KEY")
-    if not PUSHOVER_USER_KEY or not PUSHOVER_APP_TOKEN:
-        raise RuntimeError("Missing environment variable(s).")
+        raise ValueError("TTL must be betwen 1 and 31536000.")
 
 
 def main():
