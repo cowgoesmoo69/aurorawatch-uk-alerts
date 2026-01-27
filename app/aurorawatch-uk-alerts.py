@@ -10,16 +10,6 @@ from pushover import send_alert
 
 SCRIPT_VERSION = "aurorawatch-uk-alerts 2.0.0"
 
-DEBUG = False
-REDUCED_SENSITIVITY = False
-THRESHOLD = None
-ALERT_INTERVAL = 0
-CHECK_INTERVAL = 0
-TTL = 0
-PUSHOVER_APP_TOKEN = None
-PUSHOVER_USER_KEY = None
-STATUS_TEXT = ["GREEN", "YELLOW", "AMBER", "RED"]
-
 def argparser():
     parser = argparse.ArgumentParser(
         description="Fetch Aurorawatch UK status and send a Pushover alert if status is above threshold. This script requires a Pushover app token and a Pushover user/group key to be available as environment variables PUSHOVER_APP_TOKEN and PUSHOVER_USER_KEY. Consult your operating system's documentation for information on how to set environment variables."
@@ -40,12 +30,6 @@ def argparser():
         default=300,
     )
     parser.add_argument(
-        "-d",
-        "--debug",
-        help="Turns on DEBUG output",
-        action="store_true",
-    )
-    parser.add_argument(
         "-r",
         "--reduced-sensitivity",
         help="Only send alerts when status of all sites is above threshold.",
@@ -63,115 +47,119 @@ def argparser():
 
 def pre_checks():
     """
-    Checks that required environment variables exist and processes command line arguments.
-    Format validation of the app token and user key is performed within the pushover.py module.
+    Checks environment variables, validates command line arguments.
+    Returns dict with config info for use elsewhere.
     """
-    # Check for necessary environment variables.
-    if DEBUG:
-        print("DEBUG: Checking for environment variables.")
-    PUSHOVER_APP_TOKEN = os.environ.get("PUSHOVER_APP_TOKEN")
-    if not PUSHOVER_APP_TOKEN:
-        raise RuntimeError("Environment variable PUSHOVER_APP_TOKEN missing.")
-    PUSHOVER_USER_KEY = os.environ.get("PUSHOVER_USER_KEY")
-    if not PUSHOVER_USER_KEY:
-        raise RuntimeError("Environment variable PUSHOVER_USER_KEY missing.")
+    config = {}
+    
+    # Environment variables.
+    # App token.
+    token = os.environ.get("PUSHOVER_APP_TOKEN")
+    if token is None:
+        raise RuntimeError("PUSHOVER_APP_TOKEN environment variable missing.")
+    config["token"] = token
+    # User key.
+    user = os.environ.get("PUSHOVER_USER_KEY")
+    if user is None:
+        raise RuntimeError("PUSHOVER_APP_TOKEN environment variable missing.")
+    config["user"] = user
+
     # Parse command line arguments.
     args = argparser()
-    DEBUG = args.debug
-    REDUCED_SENSITIVITY = args.reduced_sensitivity
-    # Validate threshold value.
-    if DEBUG:
-        print("Validating supplied threshold value.")
+    
+    # Reduced sensitivity option.
+    config["reduced_sensitivity"] = args.reduced_sensitivity
+    
+    # Threshold.
     try:
-        THRESHOLD = int(args.threshold)
+        threshold = int(args.threshold)
     except ValueError:
         raise TypeError("Threshold must be an integer.")
-    if THRESHOLD >= 1 and THRESHOLD <= 3:
-        pass
+    if threshold in range(1,(3 + 1),1):
+        config["threshold"] = threshold
     else:
         raise ValueError("Threshold must be between 1 and 3.")
-    # Validate alert interval
+    
+    # Alert interval
     try:
-        ALERT_INTERVAL = int(args.alert_interval)
+        alert_interval = int(args.alert_interval)
     except ValueError:
         raise TypeError("Alert interval must be an integer.")
-    if DEBUG:
-        print("Validating alert interval.")
-    if ALERT_INTERVAL > 0:
-        pass
+    if alert_interval > 0:
+        config["alert_interval"] = alert_interval
     else:
         raise ValueError("Alert interval must be > 0.")
-    # Validate check interval
+    
+    # Check interval
     try:
-        CHECK_INTERVAL = int(args.check_interval)
+        check_interval = int(args.check_interval)
     except ValueError:
         raise TypeError("Check interval must be an integer.")
-    if DEBUG:
-        print("Validating check interval.")
-    if CHECK_INTERVAL >= 180:
-        pass
+    if check_interval >= 180:
+        config["check_interval"] = check_interval
     else:
         raise ValueError("Check interval must be >= 180.")
-    # Validate ttl value.
+    
+    # TTL.
     try:
-        TTL = int(args.ttl)
+        ttl = int(args.ttl)
     except ValueError:
         raise TypeError("TTL must be an integer.")
-    if DEBUG:
-        print("Validating TTL.")
-    if TTL >= 1 and TTL <= 31536000:
-        pass
+    if ttl in range(1,(31536000 + 1),1):
+        config["ttl"] = ttl
     else:
         raise ValueError("TTL must be betwen 1 and 31536000.")
 
+    return config
+
+
+def should_alert(config, state):
+    if state["current_status"] == None:
+        return False
+    if state["current_status"] < config["threshold"]:
+        state.update(
+            {
+                "last_alert_time": 0,
+                "last_alert_status": 0
+                }
+            )
+        return False
+    now = time.time()
+    if state["last_alert_time"] == 0 or (now - state["last_alert_time"] >= config["alert_interval"]) or state["current_status"] > state["last_alert_status"]:
+        state.update(
+            {
+                "last_alert_time": now,
+                "last_alert_status": state["current_status"]
+                }
+            )
+        return True
+
 
 def main():
-    last_alert_time = 0
-    last_alert_status = 0
+    status_text = ["GREEN", "YELLOW", "AMBER", "RED"]
+    config = pre_checks()
+    state = {
+        "current_status": 0,
+        "last_alert_status": 0,
+        "last_alert_time": 0,
+        }
+    #print(config)
     while True:
-        status = get_status(REDUCED_SENSITIVITY)
-        if status == None:
-            if DEBUG:
-                print("An error occurred fetching status, skipping.")
-        else:
-            now = time.time()
-            if DEBUG:
-                print(f"Current status: {STATUS_TEXT[status]}.")
-            if status >= THRESHOLD:
-                should_alert = (
-                    last_alert_time == 0
-                    or (now - last_alert_time >= ALERT_INTERVAL)
-                    or (status > last_alert_status)
-                )
-                if should_alert:
-                    if DEBUG:
-                        print("Sending alert.")
-                    args = {
-                        "token": PUSHOVER_APP_TOKEN,
-                        "user": PUSHOVER_USER_KEY,
-                        "message": f"AuroraWatch UK Status: {STATUS_TEXT[status]}.",
-                        "ttl": TTL,
-                    }
-                    # Send RED alerts as high priority.
-                    if status == 3:
-                        args["priority"] = 1
-                    send_alert(**args)
-                    last_alert_time = now
-                    last_alert_status = status
-                else:
-                    if DEBUG:
-                        print("Status above threshold, but alert recently sent.")
-            else:
-                # Reset if status drops below threshold.
-                last_alert_time = 0
-                last_alert_status = 0
-            if DEBUG:
-                print("Sleeping...")
-            time.sleep(
-                CHECK_INTERVAL
-            )  # AWUK request no shorter than 3-minute interval.
+        state["current_status"] = get_status(config["reduced_sensitivity"])
+        print(f"Current status: {state['current_status']}")
+        if should_alert(config, state):
+            args = {
+                "token": config["token"],
+                "user": config["user"],
+                "message": f"AuroraWatch UK Status: {status_text[state["current_status"]]}.",
+                "ttl": config["ttl"],
+            }
+            # Send RED alerts as high priority.
+            if state["current_status"] == 3:
+                args["priority"] = 1
+            send_alert(**args)
+        time.sleep(config["check_interval"])
 
 
 if __name__ == "__main__":
-    pre_checks()
     main()
