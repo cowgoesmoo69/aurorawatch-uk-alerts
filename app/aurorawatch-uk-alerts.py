@@ -64,7 +64,7 @@ def argparser():
 def pre_checks():
     """
     Checks that required environment variables exist and processes command line arguments.
-    Format validation of the app token and the user key is performed within the pushover.py module.
+    Format validation of the app token and user key is performed within the pushover.py module.
     """
     # Check for necessary environment variables.
     if DEBUG:
