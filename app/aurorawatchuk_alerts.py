@@ -59,12 +59,11 @@ def pre_checks():
     # User key.
     user = os.environ.get("PUSHOVER_USER_KEY")
     if user is None:
-        raise RuntimeError("PUSHOVER_APP_TOKEN environment variable missing.")
+        raise RuntimeError("PUSHOVER_USER_KEY environment variable missing.")
     config["user"] = user
 
     # Parse command line arguments.
     args = argparser()
-    
     # Reduced sensitivity option.
     config["reduced_sensitivity"] = args.reduced_sensitivity
     
