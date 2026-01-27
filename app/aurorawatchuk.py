@@ -85,7 +85,7 @@ def get_status(reduced_sensitivity=False):
 def main():
     print("This script is not intended to be run as-is.")
     print(
-        "Put this file in the same directory as your script and import: from aurorawatchuk.py import get_status."
+        "Put this file in the same directory as your script and import: from aurorawatchuk import get_status."
     )
     # print(get_status())
 
