@@ -6,7 +6,7 @@ import time
 from aurorawatchuk import get_status
 from pushover import send_alert
 
-SCRIPT_VERSION = "aurorawatch-uk-alerts 2.0.0"
+SCRIPT_VERSION = "aurorawatchuk_alerts 2.0.0"
 
 def argparser():
     parser = argparse.ArgumentParser(
