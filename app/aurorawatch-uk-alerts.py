@@ -127,6 +127,7 @@ def pre_checks():
 def main():
     STATUS_TEXT = ["GREEN", "YELLOW", "AMBER", "RED"]
     last_alert_time = 0
+    last_alert_status = 0
     while True:
         status = get_status(REDUCED_SENSITIVITY)
         if status == None:
@@ -137,8 +138,10 @@ def main():
             if DEBUG:
                 print(f"Current status: {STATUS_TEXT[status]}.")
             if status >= THRESHOLD:
-                should_alert = last_alert_time == 0 or (
-                    now - last_alert_time >= ALERT_INTERVAL
+                should_alert = (
+                    last_alert_time == 0
+                    or (now - last_alert_time >= ALERT_INTERVAL)
+                    or (status > last_alert_status)
                 )
                 if should_alert:
                     if DEBUG:
@@ -154,12 +157,14 @@ def main():
                         args["priority"] = 1
                     send_alert(**args)
                     last_alert_time = now
+                    last_alert_status = status
                 else:
                     if DEBUG:
                         print("Status above threshold, but alert recently sent.")
             else:
                 # Reset if status drops below threshold.
                 last_alert_time = 0
+                last_alert_status = 0
             if DEBUG:
                 print("Sleeping...")
             time.sleep(
