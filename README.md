@@ -86,7 +86,7 @@ These instructions are written primarily with Debian in mind, but they will prob
     ```
 
     replacing the xs and ys with the keys from your Pushover account. Ctrl-s to save, Ctrl-x to exit.
-1. Optional Step - Create a venv to run in:
+1. Create a venv and install required libraries:
 
     In the root of the repo run:
 

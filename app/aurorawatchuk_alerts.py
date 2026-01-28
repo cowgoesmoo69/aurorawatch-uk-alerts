@@ -157,7 +157,7 @@ def main():
             args = {
                 "token": config["token"],
                 "user": config["user"],
-                "message": f"AuroraWatch UK Status: {status_text[state["current_status"]]}.",
+                "message": f"AuroraWatch UK Status: {status_text[state['current_status']]}.",
                 "ttl": config["ttl"],
             }
             # Send RED alerts as high priority.
