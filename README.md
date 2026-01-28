@@ -51,33 +51,32 @@ options:
 These instructions assume you are either logged in at a physical terminal, or connecting over SSH etc.
 
 These instructions are written primarily with Debian in mind, but they will probably work without modification on most Linux systems.
-1. Create a new, minimal user account for the project to run under, e.g. aurora:
+1. Create a new user account for the project to run under, e.g. aurora:
 
-    ```sudo adduser aurora --no-create-home --disabled-password```. Enter whatever you like for name etc. when prompted.
-1. Clone the project repository:
+    `sudo adduser aurora --disabled-password`. Enter a name when prompted, e.g. "AuroraWatch UK Alerts service account".
+1. Use sudo to login as the new user:
 
-    `git clone https://github.com/cowgoesmoo69/aurorawatchuk_alerts.git`.
-1. Change ownership of the directory and its contents:
+    `sudo su - aurora`.
+1. Create a new folder and cd into it:
 
-    `sudo chown -R aurora: aurorawatchuk_alerts`.
-1. Update permissions of the directory and its contents:
+    `mkdir /home/aurora/opt`
 
-    `sudo chmod -R 755 aurorawatchuk_alerts`.
-1. Move the directory into /opt:
+    then
 
-    `sudo mv aurorawatchuk_alerts /opt`.
-1. Create a directory to hold an environment file:
+    `cd /home/aurora/opt`.
+1. Clone the project repository and cd into it:
 
-    `sudo mkdir /etc/opt/aurorawatchuk_alerts`.
-1. [Log in](https://pushover.net/login) to your Pushover account.
-1. [Create a new app](https://pushover.net/apps/build).
-1. Fill in the name, description etc., agree to terms and click Create Application. (You might like to set the app icon to the AuroraWatch UK icon from the assets directory, so that it appears on the Pushover messages.)
-1. Copy the API token into a note-taking app.
-1. Go back to your Pushover [account page](https://pushover.net/).
-1. Copy your user key into a note-taking app. (You could also create a delivery group, add multiple user keys to the group, and copy the group key if you wanted to send alerts to multiple users simultaneously.)
+    `git clone https://github.com/cowgoesmoo69/aurorawatchuk_alerts.git`
+
+    then
+
+    `cd /home/aurora/opt/aurorawatchuk_alerts`.
+1. Collect user/group key and app token from Pushover.
+  - Log in to your Pushover account.
+  - Create a new app and make a note of the API token.
+  - Make a note of the recipient user/group key.
 1. Create an environment file:
-
-    `sudo nano /etc/opt/aurorawatchuk_alerts/env`
+    `nano /home/aurora/opt/aurorawatchuk_alerts/keys.env`
 
     containing
 
@@ -86,16 +85,25 @@ These instructions are written primarily with Debian in mind, but they will prob
     PUSHOVER_APP_TOKEN=yyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
     ```
 
-    replacing the xs and ys with the keys you copied out of your Pushover account. Ctrl-s to save, Ctrl-x to exit.
-1. Change the ownership of the directory and file:
+    replacing the xs and ys with the keys from your Pushover account. Ctrl-s to save, Ctrl-x to exit.
+1. Optional Step - Create a venv to run in:
 
-    `sudo chown -R aurora: /etc/opt/aurorawatch-uk-alerts`.
-1. Lock down the permissions of the directory and file:
+    In the root of the repo run:
 
-    `sudo chmod -R 700 /etc/opt/aurorawatch-uk-alerts`.
+    `python3 -m venv env`,
+
+    `source env/bin/activate`,
+
+    `pip install -r requirements.txt`,
+
+    `deactivate`.
+
+
+
+
 1. Create a new systemd unit file:
 
-    `sudo nano /etc/systemd/system/aurorawatch-uk-alerts.service`
+    `sudo nano /etc/systemd/system/aurorawatchuk_alerts.service`
 
     containing
 
@@ -112,9 +120,9 @@ These instructions are written primarily with Debian in mind, but they will prob
     ExitType=main
     KillMode=control-group
     Restart=no
-    EnvironmentFile=/etc/opt/aurorawatchuk_alerts/env
-    ### TODO ### the ExecStart line needs to be updated ### TODO ###
-    ExecStart=/usr/bin/python3 /opt/aurorawatch-uk-alerts/app/aurorawatch-uk-alerts.py 2
+    EnvironmentFile=/home/aurora/opt/aurorawatchuk_alerts/keys.env
+    ### TODO ### need to verify ExecStart line functions correctly ### TODO ###
+    ExecStart=cd /home/aurora/opt/aurorawatchuk_alerts && env/bin/python3 -m app.aurorawatchuk_alerts 2
 
     [Install]
     WantedBy=multi-user.target
