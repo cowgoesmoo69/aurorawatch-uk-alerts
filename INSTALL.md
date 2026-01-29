@@ -1,4 +1,4 @@
-# Installation
+﻿# Installation
 ## Pre-requisites
 - A system running a Linux distribution that uses systemd, e.g. [Debian](https://www.debian.org/), and sudo access.
 - [git](https://git-scm.com/). Install with `sudo apt install git`.
@@ -104,5 +104,16 @@ These instructions are written primarily with Debian in mind, but they will prob
     Something similar to the below should be seen:
 
     ```
-    ### TODO ### Replace this section ### TODO ###
+    ● aurorawatchuk_alerts.service - AuroraWatch UK Alerts
+         Loaded: loaded (/etc/systemd/system/aurorawatchuk_alerts.service; enabled; preset: enabled)
+         Active: active (running) since Thu 2026-01-29 18:42:08 UTC; 5s ago
+       Main PID: 113880 (python3)
+          Tasks: 1 (limit: 9440)
+         Memory: 17.4M
+            CPU: 167ms
+         CGroup: /system.slice/aurorawatchuk_alerts.service
+                 └─113880 /home/aurora/opt/aurorawatchuk_alerts/env/bin/python3 -m app.aurorawatchuk_alerts 3
+
+    Jan 29 18:42:08 hostname systemd[1]: Starting aurorawatchuk_alerts.service - AuroraWatch UK Alerts...
+    Jan 29 18:42:08 hostname systemd[1]: Started aurorawatchuk_alerts.service - AuroraWatch UK Alerts.
     ```
