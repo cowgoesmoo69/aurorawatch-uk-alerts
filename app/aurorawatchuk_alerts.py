@@ -117,7 +117,7 @@ def pre_checks(token, user, args):
     return config
 
 
-def should_alert(config, state):
+def should_alert(config, state, now=None):
     if state["current_status"] is None:
         return False
     if state["current_status"] < config["threshold"]:
@@ -129,7 +129,8 @@ def should_alert(config, state):
         )
         return False
     # current_status >= threshold.
-    now = time.time()
+    if now is None:
+        now = time.time()
     if (
         state["last_alert_time"] == 0
         or (now - state["last_alert_time"] >= config["alert_interval"])
