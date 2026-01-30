@@ -5,6 +5,7 @@
 
 import argparse
 import os
+import re
 import time
 from app.aurorawatchuk import get_status
 from app.pushover import send_alert
