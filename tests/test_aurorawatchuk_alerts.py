@@ -1,5 +1,4 @@
 import pytest
-import time
 from argparse import Namespace
 from app.aurorawatchuk_alerts import pre_checks, should_alert
 
