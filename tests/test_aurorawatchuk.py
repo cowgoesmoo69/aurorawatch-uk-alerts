@@ -75,123 +75,196 @@ def test_get_status_ids_reduced(mock_awuk_request):
 
 # process_status_ids() tests.
 # Invalid status ID tests.
-def test_process_status_ids_unrecognised():
-    # Single invalid.
+def test_process_status_ids_single_invalid():
     status_ids = [
         {"status_id": "purple"},
     ]
     assert process_status_ids(status_ids) == None
-    # Multiple invalid.
+
+
+def test_process_status_ids_multiple_invalid():
     status_ids = [
         {"status_id": "purple"},
         {"status_id": "grey"},
         {"status_id": "blue"},
     ]
     assert process_status_ids(status_ids) == None
-    # Mixture of valid and invalid.
+
+
+def test_process_status_ids_invalid_valid_mixed():
     status_ids = [
-        {"status_id": "purple"},
+        {"status_id": "yellow"},
+        {"status_id": "collywobbles"},
+        {"status_id": "gubbins"},
+    ]
+    assert process_status_ids(status_ids) == 1
+
+    status_ids = [
+        {"status_id": "bumfuzzle"},
         {"status_id": "amber"},
-        {"status_id": "blue"},
+        {"status_id": "lollygag"},
     ]
     assert process_status_ids(status_ids) == 2
 
+    status_ids = [
+        {"status_id": "giraffe"},
+        {"status_id": "leopard"},
+        {"status_id": "red"},
+    ]
+    assert process_status_ids(status_ids) == 3
+
 
 # Rank combination tests.
-def test_process_status_ids_ranks():
-    # Single status tests.
+def test_process_status_ids_single_green():
     status_ids = [
         {"status_id": "green"},
     ]
     assert process_status_ids(status_ids) == 0
+
+
+def test_process_status_ids_single_yellow():
     status_ids = [
         {"status_id": "yellow"},
     ]
     assert process_status_ids(status_ids) == 1
+
+
+def test_process_status_ids_single_amber():
     status_ids = [
         {"status_id": "amber"},
     ]
     assert process_status_ids(status_ids) == 2
+
+
+
+def test_process_status_ids_single_red():
     status_ids = [
         {"status_id": "red"},
     ]
     assert process_status_ids(status_ids) == 3
-    # Multi status tests.
+
+
+def test_process_status_ids_multi_green_green():
     status_ids = [
         {"status_id": "green"},
         {"status_id": "green"},
     ]
     assert process_status_ids(status_ids) == 0
+
+
+def test_process_status_ids_multi_green_yellow():
     status_ids = [
         {"status_id": "green"},
         {"status_id": "yellow"},
     ]
     assert process_status_ids(status_ids) == 0
+
+
+def test_process_status_ids_multi_green_amber():
     status_ids = [
         {"status_id": "green"},
         {"status_id": "amber"},
     ]
     assert process_status_ids(status_ids) == 0
+
+
+def test_process_status_ids_multi_green_red():
     status_ids = [
         {"status_id": "green"},
         {"status_id": "red"},
     ]
     assert process_status_ids(status_ids) == 0
+
+
+def test_process_status_ids_multi_yellow_green():
     status_ids = [
         {"status_id": "yellow"},
         {"status_id": "green"},
     ]
     assert process_status_ids(status_ids) == 0
+
+
+def test_process_status_ids_multi_yellow_yellow():
     status_ids = [
         {"status_id": "yellow"},
         {"status_id": "yellow"},
     ]
     assert process_status_ids(status_ids) == 1
+
+
+def test_process_status_ids_multi_yellow_amber():
     status_ids = [
         {"status_id": "yellow"},
         {"status_id": "amber"},
     ]
     assert process_status_ids(status_ids) == 1
+
+
+def test_process_status_ids_multi_yellow_red():
     status_ids = [
         {"status_id": "yellow"},
-        {"status_id": "red"},
+        {"status_id": "yellow"},
     ]
     assert process_status_ids(status_ids) == 1
+
+
+def test_process_status_ids_multi_amber_green():
     status_ids = [
         {"status_id": "amber"},
         {"status_id": "green"},
     ]
     assert process_status_ids(status_ids) == 0
+
+
+def test_process_status_ids_multi_amber_yellow():
     status_ids = [
         {"status_id": "amber"},
         {"status_id": "yellow"},
     ]
     assert process_status_ids(status_ids) == 1
+
+
+def test_process_status_ids_multi_amber_amber():
     status_ids = [
         {"status_id": "amber"},
         {"status_id": "amber"},
     ]
     assert process_status_ids(status_ids) == 2
+
+
+def test_process_status_ids_multi_amber_red():
     status_ids = [
         {"status_id": "amber"},
         {"status_id": "red"},
     ]
     assert process_status_ids(status_ids) == 2
+
+
+def test_process_status_ids_multi_red_green():
     status_ids = [
         {"status_id": "red"},
         {"status_id": "green"},
     ]
     assert process_status_ids(status_ids) == 0
+
+
+def test_process_status_ids_multi_red_yellow():
     status_ids = [
         {"status_id": "red"},
         {"status_id": "yellow"},
     ]
     assert process_status_ids(status_ids) == 1
+
+
+def test_process_status_ids_multi_red_amber():
     status_ids = [
         {"status_id": "red"},
         {"status_id": "amber"},
     ]
     assert process_status_ids(status_ids) == 2
+
+
+def test_process_status_ids_multi_red_red():
     status_ids = [
         {"status_id": "red"},
         {"status_id": "red"},
